@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <header_header></header_header>
+    <script src="js/include.js"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <script>
+        function searchBooks() {
+            const searchInput = document.querySelector('.topnav input');
+            const searchTerm = searchInput.value;
+            window.location.href = `/search_results.html?term=${encodeURIComponent(searchTerm)}`;
+        }
+    </script>
+    <script>
+        function handleSearch(event) {
+            event.preventDefault();
+
+            const book_id = document.getElementById('bookID').value;
+
+            fetch('http://localhost:3000/search_results', {
+                method: 'post',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ book_id })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        localStorage.setItem('bookID', book_id);
+                        window.location.href = 'book-details.html';
+                    } else {
+                        alert(data.message);
+                    }
+                })
+                .catch(error => console.error('Error during loading page:', error));
+        }
+    </script>
+    <style>
+        body {
+            background-color: lightblue;
+        }
+
+        .image {
+            width: 100%;
+            height: 150px;
+            object-fit: contain;
+        }
+
+        .book-item {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background-color: #f9f9f9;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            height: 350px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .book-item h3,
+        .book-item p {
+            text-align: center;
+        }
+
+        .top-padding {
+            padding-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <header_body></header_body>
+    <script src="js/include.js"></script>
+    <div class="container mt-3">
+        <div id="searchResultsContainer" class="row">
+
+        </div>
+    </div>
+    <div id="notificationIcon" style="position: fixed; bottom: 20px; right: 20px; cursor: pointer;">
+        <i class="fa fa-bell"></i>
+    </div>
+    <div id="notificationModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>Notifications</h2>
+            <div id="notificationList">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            const searchTerm = urlParams.get('term');
+
+            fetch(`/search?term=${encodeURIComponent(searchTerm)}`)
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById('searchResultsContainer');
+                    data.forEach((book, index) => {
+                        const bookElement = document.createElement('div');
+                        bookElement.className = 'col-lg-4 col-md-6 mb-4';
+                        if (index < 3) {
+                            bookElement.classList.add('top-padding');
+                        }
+                        bookElement.innerHTML = `
+                    <div class="book-item">
+                        <h3><a href="/book-details.html?bookId=${book.book_id}">${book.title}</a></h3>
+                        <p>${book.author_name}</p>
+                        <img class="image" src="${book.image_url}" alt="${book.title}">
+                    </div>
+                `;
+                        container.appendChild(bookElement);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        });
+        function openNotifications() {
+            console.log('openNotifications function called');
+            document.getElementById('notificationModal').style.display = 'block';
+            fetchNotifications();
+        }
+
+        function closeModal() {
+            console.log('closeModal function called');  
+            document.getElementById('notificationModal').style.display = 'none';
+        }
+
+        function fetchNotifications() {
+            console.log('fetchNotifications function called');  
+            fetch('http://localhost:3000/notifications')
+                .then(response => {
+                    console.log('Response received:', response);  
+                    return response.json();
+                })
+                .then(notifications => {
+                    console.log('Notifications:', notifications);
+                    const list = document.getElementById('notificationList');
+                    list.innerHTML = '';
+                    notifications.forEach(notification => {
+                        const item = document.createElement('div');
+                        item.textContent = notification.notif_text;
+                        list.appendChild(item);
+                    });
+                })
+                .catch(error => console.error('Error fetching notifications:', error));
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const notificationIcon = document.getElementById('notificationIcon');
+            if (notificationIcon) {
+                console.log('notificationIcon found:', notificationIcon);
+                notificationIcon.addEventListener('click', openNotifications);
+                console.log('Event listener attached to notification icon');
+            } else {
+                console.error('notificationIcon element not found');
+            }
+        });
+
+    </script>
+
+</body>
+
+</html>

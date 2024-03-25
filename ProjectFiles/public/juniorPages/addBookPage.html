@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        #Title {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container mt-4">
+        <div id="Title">
+            <h1>Please fill the form below to add a new book to the system.</h1>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <form id="addBookForm">
+                    <div class="form-group">
+                        <label for="bookName">Book Name:</label>
+                        <input type="text" id="bookName" placeholder="Book Name" class="form-control">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="authorSelect">Author Name:</label>
+                        <select id="authorSelect" class="form-control"></select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="publisherSelect">Publisher:</label>
+                        <select id="publisherSelect" class="form-control"></select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="genreSelect">Select a genre:</label>
+                        <select id="genreSelect" class="form-control"></select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="ageCategorySelect">Select age category:</label>
+                        <select id="ageCategorySelect" class="form-control"></select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="description">Description:</label>
+                        <input type="text" id="description" placeholder="Description" class="form-control">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="priceName">Price:</label>
+                        <input type="text" id="priceName" placeholder="Price" pattern="\d+(\.\d{2})?"
+                            class="form-control">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="stockName">Stock:</label>
+                        <input type="number" id="stockName" placeholder="Stock" min="1" step="1" class="form-control">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="bookImageUrl">Book Image URL:</label>
+                        <input type="text" id="bookImageUrl" placeholder="Image URL" required pattern=".*\.jpg"
+                            class="form-control">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Add Book</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            fetchDropdownData();
+
+            document.getElementById('addBookForm').addEventListener('submit', function (event) {
+                event.preventDefault(); 
+                addBook();
+            });
+        });
+
+        function fetchDropdownData() {
+            fetch('/authors')
+                .then(response => response.json())
+                .then(authors => {
+                    const authorSelect = document.getElementById('authorSelect');
+                    authors.forEach(author => {
+                        const option = document.createElement('option');
+                        option.value = author.author_id;
+                        option.textContent = author.author_name;
+                        authorSelect.appendChild(option);
+                    });
+                });
+
+            fetch('/publishers')
+                .then(response => response.json())
+                .then(publishers => {
+                    const publisherSelect = document.getElementById('publisherSelect');
+                    publishers.forEach(publisher => {
+                        const option = document.createElement('option');
+                        option.value = publisher.id;
+                        option.textContent = publisher.username; 
+                        publisherSelect.appendChild(option);
+                    });
+                });
+
+
+            fetch('/genres')
+                .then(response => response.json())
+                .then(genres => {
+                    const genreSelect = document.getElementById('genreSelect');
+                    genres.forEach(genre => {
+                        const option = document.createElement('option');
+                        option.value = genre.genre_id;
+                        option.textContent = genre.genre_name;
+                        genreSelect.appendChild(option);
+                    });
+                });
+
+            fetch('/age-categories')
+                .then(response => response.json())
+                .then(ageCategories => {
+                    const ageCategorySelect = document.getElementById('ageCategorySelect');
+                    ageCategories.forEach(category => {
+                        const option = document.createElement('option');
+                        option.value = category.age_cat_id;
+                        option.textContent = category.cat_name;
+                        ageCategorySelect.appendChild(option);
+                    });
+                });
+        }
+
+        function addBook() {
+            const bookData = {
+                title: document.getElementById('bookName').value,
+                authorId: document.getElementById('authorSelect').value,
+                publisherId: document.getElementById('publisherSelect').value,
+                genreId: document.getElementById('genreSelect').value,
+                ageCatId: document.getElementById('ageCategorySelect').value,
+                description: document.getElementById('description').value,
+                price: document.getElementById('priceName').value,
+                stock: document.getElementById('stockName').value,
+                imageUrl: document.getElementById('bookImageUrl').value 
+            };
+
+            fetch('/add-book', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(bookData)
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Book added successfully');
+                    } else {
+                        alert('Error adding book');
+                    }
+                })
+                .catch(error => console.error('Error adding book:', error));
+        }
+
+
+    </script>
+
+
+</body>
+
+</html>

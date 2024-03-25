@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <header_header></header_header>
+    <script src="js/include.js"></script>
+    <style>
+        #bookTitle {
+            padding-top: 20px;
+            color: white;
+        }
+
+        #bookAuthor {
+            color: white;
+
+        }
+
+        #bookImage {
+            max-width: 40%;
+            height: auto;
+            width: auto\9;
+            padding-top: 20px;
+        }
+
+        #bookPrice {
+            color: white;
+
+        }
+
+        #bookDescription {
+            color: white;
+
+        }
+
+        #bookGenre {
+            color: white;
+
+        }
+
+        #bookAgeCategory {
+            color: white;
+
+        }
+
+        #btn1 {
+            text-align: center;
+        }
+
+        #bookStock {
+            color: white;
+        }
+
+        .col-md-1 {
+            padding-bottom: 20px;
+
+        }
+
+        .review-card {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .review-rating {
+            font-weight: bold;
+        }
+
+        .review-description {
+            margin-top: 10px;
+        }
+
+        .mb-4-custom {
+            margin-bottom: 4rem;
+        }
+    </style>
+</head>
+
+<body>
+    <header_body></header_body>
+    <div class="cont">
+        <div id="bookDetailsContainer" class="container mt-4">
+            <div class="row">
+                <div class="col-md-4">
+                    <img id="bookImage" src="" alt="Book Image" class="img-fluid">
+                </div>
+
+                <div class="col-md-8">
+                    <i>
+                        <h1 id="bookTitle"></h1>
+                    </i>
+                    <p id="bookAuthor"></p>
+                    <p id="bookGenre"></p>
+                    <p id="bookDescription"></p>
+                    <p id="bookPrice"></p>
+                    <p id="bookAgeCategory"></p>
+                    <p id="bookStock"></p>
+                </div>
+                <div class="col-md-1">
+                    <input type="text" class="form-control" id="amount_book" placeholder="Amount">
+                </div>
+                <div class="row-md-1 align-items-end mb-3">
+                    <button class="btn btn-light" id="btn1" onclick="addToCart()">Add to Cart</button>
+                    <button class="btn btn-light" id="addToWishlistBtn" onclick="addToWishlist()">Add to Wishlist</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="container mb-4-custom">
+        <h2 class="text-center mb-3">Book Reviews</h2>
+        <div id="bookReviewsContainer">
+        </div>
+        <button id="writeReviewBtn" class="btn btn-primary mt-3" onclick="openReviewModal()">Write a Review</button>
+    </div>
+
+    <!-- Review Modal -->
+    <div id="reviewModal" class="modal" tabindex="-1" role="dialog" style="display:none;">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Write a Review for <span id="reviewBookTitle"></span></h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"
+                        onclick="closeReviewModal()">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <input type="number" id="reviewRating" class="form-control mb-2" placeholder="Rating (1-10)" min="1"
+                        max="10">
+                    <textarea id="reviewDescription" class="form-control" placeholder="Your review"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal"
+                        onclick="closeReviewModal()">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="submitReview()">Add Review</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="notificationIcon" style="position: fixed; bottom: 20px; right: 20px; cursor: pointer;">
+        <i class="fa fa-bell"></i>
+    </div>
+
+    <div id="notificationModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>Notifications</h2>
+            <div id="notificationList">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            const bookId = urlParams.get('bookId');
+
+            if (bookId) {
+                fetchBookDetails(bookId);
+                fetchAndDisplayReviews(bookId);
+            }
+        });
+
+        function fetchAndDisplayReviews(bookId) {
+            fetch(`http://localhost:3000/reviews/${bookId}`)
+                .then(response => response.json())
+                .then(reviews => {
+                    const container = document.getElementById('bookReviewsContainer');
+                    container.innerHTML = '';
+                    reviews.forEach(review => {
+                        const reviewCard = document.createElement('div');
+                        reviewCard.className = 'review-card';
+                        reviewCard.innerHTML = `
+                            <p class="review-rating">Rating: ${review.rating}/10</p>
+                            <p class="review-description">${review.description}</p>
+                            <small>Reviewed by: ${review.username}</small>
+                        `;
+                        container.appendChild(reviewCard);
+                    });
+                })
+                .catch(error => console.error('Error fetching reviews:', error));
+        }
+
+        function fetchBookDetails(bookId) {
+            fetch(`http://localhost:3000/book/${bookId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Network response was not ok for book ID: ${bookId}`);
+                    }
+                    return response.json();
+                })
+                .then(book => {
+                    console.log(book);
+                    displayBookDetails(book);
+                })
+                .catch(error => console.error('Error fetching book details:', error));
+        }
+
+        function displayBookDetails(book) {
+            document.getElementById('bookTitle').textContent = book.title;
+            document.getElementById('bookAuthor').textContent = 'Author: ' + book.author_name;
+            document.getElementById('bookGenre').textContent = 'Genre: ' + book.genre_name;
+            document.getElementById('bookDescription').textContent = book.description;
+            document.getElementById('bookPrice').textContent = 'Price: ' + book.price;
+            document.getElementById('bookAgeCategory').textContent = 'Age Category: ' + book.age_category_name;
+            document.getElementById('bookStock').textContent = 'Stock: ' + book.stock;
+            const imageUrl = book.image_url ? book.image_url : '/images/logo.png'; // Default image if not available
+            document.getElementById('bookImage').src = imageUrl;
+        }
+
+        function addToWishlist() {
+            const username = localStorage.getItem('username');
+            const bookId = new URLSearchParams(window.location.search).get('bookId');
+            fetch(`http://localhost:3000/add-book-to-wishlist`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, bookId })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Book added to wishlist!');
+                    } else {
+                        alert(data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error adding book to wishlist:', error);
+                    alert('There was an error adding the book to your wishlist.');
+                });
+        }
+
+        function openReviewModal() {
+            const bookTitle = document.getElementById('bookTitle').textContent;
+            document.getElementById('reviewBookTitle').textContent = bookTitle;
+            document.getElementById('reviewModal').style.display = 'block';
+        }
+
+        function submitReview() {
+            const username = localStorage.getItem('username');
+            const bookId = new URLSearchParams(window.location.search).get('bookId');
+            const rating = parseInt(document.getElementById('reviewRating').value);
+            const description = document.getElementById('reviewDescription').value;
+
+            if (rating < 1 || rating > 10 || isNaN(rating)) {
+                alert('Rating must be a number between 1 and 10.');
+                return; 
+            }
+
+            fetch(`http://localhost:3000/add-review`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, bookId, rating, description })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Review added successfully!');
+                    } else {
+                        alert(data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error adding review:', error);
+                    alert('There was an error adding the review.');
+                });
+        }
+
+
+        function addToCart() {
+            const bookId = new URLSearchParams(window.location.search).get('bookId');
+            const amount = document.getElementById('amount_book').value;
+            const username = localStorage.getItem('username'); // Assuming username is stored in localStorage
+
+            fetch(`http://localhost:3000/add-book-to-cart`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, bookId, amount })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Book added to cart successfully!');
+                    } else {
+                        alert(data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error adding book to cart:', error);
+                    alert('There was an error adding the book to your cart.');
+                });
+        }
+
+
+        function closeReviewModal() {
+            document.getElementById('reviewModal').style.display = 'none';
+        }
+        function openNotifications() {
+            console.log('openNotifications function called'); // Confirm function call
+            document.getElementById('notificationModal').style.display = 'block';
+            fetchNotifications();
+        }
+
+        function closeModal() {
+            console.log('closeModal function called'); // Confirm function call
+            document.getElementById('notificationModal').style.display = 'none';
+        }
+
+        function fetchNotifications() {
+            console.log('fetchNotifications function called'); // Confirm function call
+            fetch('http://localhost:3000/notifications')
+                .then(response => {
+                    console.log('Response received:', response); // Confirm response
+                    return response.json();
+                })
+                .then(notifications => {
+                    console.log('Notifications:', notifications); // Display notifications data
+                    const list = document.getElementById('notificationList');
+                    list.innerHTML = '';
+                    notifications.forEach(notification => {
+                        const item = document.createElement('div');
+                        item.textContent = notification.notif_text;
+                        list.appendChild(item);
+                    });
+                })
+                .catch(error => console.error('Error fetching notifications:', error));
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const notificationIcon = document.getElementById('notificationIcon');
+            if (notificationIcon) {
+                console.log('notificationIcon found:', notificationIcon); // Confirm element found
+                notificationIcon.addEventListener('click', openNotifications);
+                console.log('Event listener attached to notification icon'); // Confirm event listener attachment
+            } else {
+                console.error('notificationIcon element not found');
+            }
+        });
+
+
+    </script>
+</body>
+
+</html>

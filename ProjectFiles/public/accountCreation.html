@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bookstore</title>
+    <link rel="stylesheet" href="css/bootstrap.css" />
+    <script src="https://unpkg.com/@popperjs/core@2"></script>
+
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap" />
+    <style>
+        .title-container {
+            text-align: center;
+            padding-top: 1em;
+        }
+
+        .center_title span,
+        .center-title-2 span {
+            display: inline-block;
+            white-space: nowrap;
+            color: #68bcdc;
+        }
+
+        .login-form {
+            max-width: 400px;
+            width: 100%;
+            margin: auto;
+        }
+        #titles{
+            margin-top: 20px;
+            color: #68bcdc;
+        }
+
+        .container {
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .flex-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+
+        body {
+            background: #282424;
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+<script>
+    function handleAccountCreation(event) {
+        event.preventDefault();
+
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        const birthday = document.getElementById('birthday').value;
+
+        fetch('http://localhost:3000/accCreation', {
+            method: 'post',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ username, password , birthday})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Account, cart, and wishlist created successfully! You can now log in.');
+                window.location.href = 'index.html';
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error during account creation:', error);
+            alert('An error occurred during account creation.'); 
+        });
+    }
+</script>
+
+</head>
+
+<body>
+    <div class="title-container">
+        <div class="center_title">
+            <span>
+                <h1>One last step before reaching the magical world of books...</h1>
+            </span>
+        </div>
+        <div class="center-title-2 mt-3">
+            <span>
+                <h2>Fill the form below to create your account.</h2>
+            </span>
+        </div>
+    </div>
+    <div class="flex-container">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-sm-10 col-md-6">
+                    <div class="login-form">
+                        <form>
+                            <div class="form-group mb-1">
+                                <h4 id = "titles">Username</h4>
+                                <label for="username">Username</label>  
+                                <input type="text" class="form-control" id="username" placeholder="Enter username">
+                            </div>
+                            <div class="form-group mb-3">
+                                <h4 id = "titles" >Password</h4>
+                                <label for="password">Password</label>
+                                <input type="password" class="form-control" id="password" placeholder="Password">
+                            </div>
+                            <div class="form-group mb-3">
+                                <h4 id = "titles">Birthday</h4>
+                                <label for="birthday">Birthday</label>
+                                <input type="date" class="form-control" id="birthday" required max="2023-11-28">
+                            </div>
+                            <button type="submit" class="btn btn-primary mb-1" onclick="handleAccountCreation(event)">Create account</button>
+
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>

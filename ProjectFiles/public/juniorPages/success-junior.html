@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <title>Senior Admin Dashboard</title>
+    <style>
+        .container {
+            padding-top: 20px;
+        }
+
+        .form-section {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .button-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .button-container .btn {
+            margin: 5px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1 id="welcomeMessage" class="text-center mb-4">Welcome to the Junior Admin Dashboard</h1>
+
+        <div class="button-container">
+            <button onclick="takeToAdd()" class="btn btn-primary">Add A New Book</button>
+            <button onclick="takeToEdit()" class="btn btn-secondary">Edit Existing Book</button>
+            <button onclick="takeToRemove()" class="btn btn-danger">Remove A Book From The System</button>
+            <button class="btn btn-outline-info" onclick="openModal('deletedBooksModal')">Show Deleted Books</button>
+            <button onclick="logOut()" class="btn btn-dark">Log Out</button>
+        </div>
+        <div class="form-section">
+            <h2>Add New Author</h2>
+            <form id="addAuthorForm">
+                <div class="form-group">
+                    <label for="authorName">Author Name:</label>
+                    <input type="text" id="authorName" name="authorName" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="authorDesc">Author Description:</label>
+                    <textarea id="authorDesc" name="authorDesc" class="form-control" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="authorImage">Author Image (URL):</label>
+                    <input type="text" id="authorImage" name="authorImage" class="form-control" required
+                        pattern=".*\.jpg">
+                </div>
+                <button type="submit" class="btn btn-primary">Add Author</button>
+            </form>
+        </div>
+
+        <div class="form-section">
+            <h2>Add New Genre</h2>
+            <form id="addGenreForm">
+                <div class="form-group">
+                    <label for="genreName">Genre Name:</label>
+                    <input type="text" id="genreName" name="genreName" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="genreDesc">Genre Description:</label>
+                    <textarea id="genreDesc" name="genreDesc" class="form-control" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Add Genre</button>
+            </form>
+        </div>
+
+        <div class="form-section">
+            <h2>Add New Age Category</h2>
+            <form id="addAgeForm">
+                <div class="form-group">
+                    <label for="ageName">Age Category Name:</label>
+                    <input type="text" id="ageName" name="ageName" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="ageMin">Age Category Minimum:</label>
+                    <input type="number" id="ageMin" name="ageMin" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="ageMax">Age Category Maximum:</label>
+                    <input type="number" id="ageMax" name="ageMax" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Add Age Category</button>
+            </form>
+        </div>
+
+
+        <div id="deletedBooksModal" class="modal">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Deleted Books</h5>
+                        <button type="button" class="close" onclick="closeModal('deletedBooksModal')">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="deletedBooksList">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button id="reinsertBooksBtn" class="btn btn-primary" onclick="confirmReinsertion()">Reinsert Selected Books</button>
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('deletedBooksModal')">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container mt-4">
+            <h2>Book Inventory</h2>
+            <div id="booksTableContainer">
+            </div>
+        </div>
+
+        <script>
+            function logOut() {
+                window.location.href = "/"
+            }
+            function takeToAdd() {
+                window.location.href = "addBookPage.html"
+            }
+            function takeToEdit() {
+                window.location.href = "editBookPage.html"
+            }
+            function takeToRemove() {
+                window.location.href = "removeBookPage.html"
+            }
+            function openModal(modalId) {
+                if (modalId === 'deletedBooksModal') {
+                    showDeletedBooks();
+                }
+                document.getElementById(modalId).style.display = "block";
+            }
+            function closeModal(modalId) {
+                document.getElementById(modalId).style.display = "none";
+            }
+            document.getElementById('addAuthorForm').addEventListener('submit', function (event) {
+                event.preventDefault();
+                const authorData = {
+                    name: document.getElementById('authorName').value,
+                    description: document.getElementById('authorDesc').value,
+                    imageUrl: document.getElementById('authorImage').value
+                };
+                fetch('/add-author', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(authorData)
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Server responded with an error');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Success:', data);
+                        alert('Author added successfully');
+                        closeModal('newAuthorModal');
+
+                    })
+                    .catch((error) => {
+                        console.error('Error:', error);
+                        alert('Error adding author: ' + error.message);
+                    });
+            });
+
+            document.getElementById('addAgeForm').addEventListener('submit', function (event) {
+                event.preventDefault();
+                const ageData = {
+                    name: document.getElementById('ageName').value,
+                    min: document.getElementById('ageMin').value,
+                    max: document.getElementById('ageMax').value
+                };
+                fetch('/add-cat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(ageData)
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Server responded with an error');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Success:', data);
+                        alert('Age Category added successfully');
+                        closeModal('newAgeModal');
+
+                    })
+                    .catch((error) => {
+                        console.error('Error:', error);
+                        alert('Error adding age category: ' + error.message);
+                    });
+            });
+
+            document.getElementById('addGenreForm').addEventListener('submit', function (event) {
+                event.preventDefault();
+                const genreData = {
+                    name: document.getElementById('genreName').value,
+                    description: document.getElementById('genreDesc').value,
+                };
+                fetch('/add-genre', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(genreData)
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Server responded with an error');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Success:', data);
+                        alert('Genre added successfully');
+                        closeModal('newGenreModal');
+
+                    })
+                    .catch((error) => {
+                        console.error('Error:', error);
+                        alert('Error adding genre: ' + error.message);
+                    });
+            });
+
+            function showDeletedBooks() {
+                fetch('/deleted-books')
+                    .then(response => response.json())
+                    .then(books => {
+                        const list = document.getElementById('deletedBooksList');
+                        list.innerHTML = '';
+                        books.forEach(book => {
+                            const item = document.createElement('div');
+                            const checkbox = document.createElement('input');
+                            checkbox.type = 'checkbox';
+                            //checkbox.value = book.book_id;
+                            //checkbox.id = 'book-' + book.book_id;
+                            checkbox.setAttribute('data-book-title', book.title);
+                            const label = document.createElement('label');
+                            label.htmlFor = 'book-' + book.book_id;
+                            label.textContent = `Book Title: ${book.title} - Author: ${book.author_name}`;
+
+                            item.appendChild(checkbox);
+                            item.appendChild(label);
+                            list.appendChild(item);
+                        });
+                    })
+                    .catch(error => console.error('Error:', error));
+            }
+
+            function confirmReinsertion() {
+                if (confirm("Are you sure you want to reinsert the selected books?")) {
+                    reinsertBooks();
+                }
+            }
+            function reinsertBooks() {
+                const checkboxes = document.querySelectorAll('#deletedBooksList input[type="checkbox"]:checked');
+
+                if (checkboxes.length === 0) {
+                    alert("No books were selected.");
+                    return;
+                }
+
+                checkboxes.forEach(checkbox => {
+                    const bookTitle = checkbox.getAttribute('data-book-title');
+
+                    fetch(`/reinsert-book`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ bookTitle })
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                alert(`Book titled "${bookTitle}" reinserted successfully`);
+                                checkbox.parentElement.style.display = 'none'; // Optionally hide the reinserted book from the list
+                            } else {
+                                alert(`Error reinserting book titled "${bookTitle}"`);
+                            }
+                        })
+                        .catch(error => console.error('Error reinserting book:', error));
+                });
+            }
+
+
+            document.addEventListener('DOMContentLoaded', function () {
+                fetchBooksData();
+            });
+
+            function fetchBooksData() {
+                fetch('http://localhost:3000/books')
+                    .then(response => response.json())
+                    .then(books => createBooksTable(books))
+                    .catch(error => console.error('Error fetching books:', error));
+            }
+
+            function createBooksTable(books) {
+                const container = document.getElementById('booksTableContainer');
+                const table = document.createElement('table');
+                table.className = 'table table-hover';
+
+                // Create table header
+                const thead = table.createTHead();
+                const headerRow = thead.insertRow();
+                const headers = ["Title", "Stock", "Price"];
+                headers.forEach(text => {
+                    let th = document.createElement('th');
+                    th.textContent = text;
+                    headerRow.appendChild(th);
+                });
+
+                // Create table body
+                const tbody = table.createTBody();
+                books.forEach(book => {
+                    const row = tbody.insertRow();
+                    row.insertCell().textContent = book.title;
+                    row.insertCell().textContent = book.stock;
+                    row.insertCell().textContent = book.price;
+                });
+
+                container.innerHTML = '';
+                container.appendChild(table);
+            }
+        </script>
+</body>

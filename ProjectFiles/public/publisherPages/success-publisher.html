@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: gray;
+            padding-top: 20px;
+        }
+
+        .container {
+            width: 80%;
+            margin: auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .requests-container {
+            margin-top: 30px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container text-center">
+        <button id="addBookBtn" class="btn btn-primary">Add Book</button>
+        <button id="editBookBtn" class="btn btn-secondary">Edit Book</button>
+        <button onclick="logOut()" class="btn btn-dark">Log Out</button>
+        <div id="output-text"></div>
+    </div>
+
+    <div class="container text-center">
+        <div id="booksTableContainer"></div>
+        <button id="removeBookBtn" class="btn btn-danger mt-3">Remove Selected Books</button>
+    </div>
+    <div class="container text-center requests-container">
+        <h2>Pending Requests</h2>
+        <div id="pendingRequestsContainer"></div>
+
+        <h2>Processed Requests</h2>
+        <div id="processedRequestsContainer"></div>
+    </div>
+
+    <script>
+
+        document.getElementById('addBookBtn').addEventListener('click', function () {
+            const username = localStorage.getItem('username');
+            document.getElementById('output-text').innerHTML = `
+            <p>Please fill in the details of the book you want to add:</p>
+            <form id="addBookForm" class="form-group">
+                <div class="mb-3">
+                    <label for="title" class="form-label">Title:</label>
+                    <input type="text" id="title" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label for="ageCat" class="form-label">Age Category:</label>
+                    <input type="text" id="ageCat" class="form-control" required >
+                </div>
+                <div class="mb-3">
+                    <label for="genre" class="form-label">Genre:</label>
+                    <input type="text" id="genre" class="form-control" required >
+                </div>
+                <div class="mb-3">
+                    <label for="author" class="form-label">Author:</label>
+                    <input type="text" id="author" class="form-control" required >
+                </div>
+                <div class="mb-3">
+                    <label for="description" class="form-label">Description:</label>
+                    <textarea id="description" class="form-control"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="price" class="form-label">Price:</label>
+                    <input type="number" id="price" class="form-control" step="0.01" required pattern="\d+(\.\d{2})?">
+                </div>
+                <div class="mb-3">
+                    <label for="stock" class="form-label">Stock:</label>
+                    <input type="number" id="stock" class="form-control" required min="1" step="1">
+                </div>
+                <div class="mb-3">
+                    <label for="bookImageUrl" class="form-label">Book Image URL:</label>
+                    <input type="text" id="bookImageUrl" placeholder="Image URL" required pattern=".*\.jpg"
+                            class="form-control">
+                </div>
+                <button type="submit" class="btn btn-success">Submit</button>
+            </form>
+        `;
+            document.getElementById('addBookForm').addEventListener('submit', function (event) {
+                event.preventDefault();
+
+                const title = document.getElementById('title').value;
+                const ageCategory = document.getElementById('ageCat').value;
+                const genre = document.getElementById('genre').value;
+                const author = document.getElementById('author').value;
+                const description = document.getElementById('description').value;
+                const price = document.getElementById('price').value;
+                const stock = document.getElementById('stock').value;
+                const imageUrl = document.getElementById('bookImageUrl').value;
+
+                const requestDescription = `Request to add a new book titled '${title}' with details: Age Category - ${ageCategory}, Genre - ${genre}, Author - ${author}, Description - ${description}, Price - $${price}, Stock - ${stock}, Image URL - ${imageUrl}`;
+
+                sendAddBookRequest(requestDescription);
+            });
+        });
+        document.addEventListener('DOMContentLoaded', function () {
+            const username = localStorage.getItem('username');
+            if (username) {
+                fetchBooksForPublisherUsername(username);
+            } else {
+                console.log('Username not found in localStorage');
+            }
+        });
+
+        function toLocalDateString(date) {
+            const offset = date.getTimezoneOffset();
+            const localDate = new Date(date.getTime() - (offset * 60 * 1000));
+            return localDate.toISOString().split('T')[0];
+        }
+
+        function logOut() {
+            window.location.href = "/"
+        }
+        function fetchBooksForPublisherUsername(username) {
+            fetch(`/books-by-publisher-username/${username}`)
+                .then(response => response.json())
+                .then(books => displayBooks(books))
+                .catch(error => console.error('Error fetching books:', error));
+        }
+        function displayBooks(books) {
+            const container = document.getElementById('booksTableContainer');
+            const table = document.createElement('table');
+            table.className = 'table table-hover';
+            const thead = table.createTHead();
+            const headerRow = thead.insertRow();
+            ['', 'Title', 'Average Review', 'Stock', 'Price'].forEach(text => {
+                let th = document.createElement('th');
+                th.textContent = text;
+                headerRow.appendChild(th);
+            });
+
+            const tbody = table.createTBody();
+            books.forEach(book => {
+                const row = tbody.insertRow();
+                const checkboxCell = row.insertCell();
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.setAttribute('data-book-title', book.title);
+                checkboxCell.appendChild(checkbox);
+
+                row.insertCell().textContent = book.title;
+
+                const reviewCell = row.insertCell();
+                console.log('Average review for book:', book.title, '=', book.average_review);
+
+                if (book.average_review !== null && book.average_review !== undefined) {
+                    reviewCell.textContent = parseFloat(book.average_review).toFixed(2); 
+                } else {
+                    reviewCell.textContent = 'No Reviews';
+                }
+
+                row.insertCell().textContent = book.stock;
+                row.insertCell().textContent = book.price;
+            });
+
+            container.innerHTML = '';
+            container.appendChild(table);
+        }
+
+        function sendRemoveBookRequests(queries) {
+            console.log('sendRemoveBookRequests called with queries:', queries);
+            const username = localStorage.getItem('username');
+            const sentDate = toLocalDateString(new Date());
+
+            queries.forEach(query => {
+                const requestData = {
+                    publisherUsername: username,
+                    sentDate: sentDate,
+                    status: 'sent',
+                    reqQuery: query
+                };
+
+                fetch('/send-remove-book-request', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestData)
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            console.log('Request sent successfully for query:', query);
+                        } else {
+                            console.error('Error sending request for query:', query);
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const username = localStorage.getItem('username');
+            if (username) {
+                fetchBooksForPublisherUsername(username);
+                fetchRequests(username, true);
+                fetchRequests(username, false);
+            } else {
+                console.log('Username not found in localStorage');
+            }
+        });
+        var pendingRemovalRequests = [];
+        function fetchRequests(username, isPending) {
+            const status = isPending ? 'sent' : 'processed';
+            fetch(`/requests-by-publisher-username/${username}/${status}`)
+                .then(response => response.json())
+                .then(requests => displayRequests(requests, isPending))
+                .catch(error => console.error('Error fetching requests:', error));
+        }
+
+
+        function displayRequests(requests, isPending) {
+            const containerId = isPending ? 'pendingRequestsContainer' : 'processedRequestsContainer';
+            const container = document.getElementById(containerId);
+            const list = document.createElement('ul');
+            list.className = 'list-group';
+
+            requests.forEach(request => {
+                const listItem = document.createElement('li');
+                listItem.className = 'list-group-item';
+                listItem.textContent = `Request ID: ${request.request_id}, Query: ${request.req_query}, Status: ${request.status}`;
+                list.appendChild(listItem);
+
+                if (isPending) {
+                    if (request.req_query.includes('SET is_deleted = 1')) {
+                        pendingRemovalRequests.push(request.req_query);
+                    }
+
+                }
+            });
+
+            container.innerHTML = '';
+            container.appendChild(list);
+        }
+        document.getElementById('removeBookBtn').addEventListener('click', function () {
+            console.log('Remove button clicked');
+            const checkboxes = document.querySelectorAll('#booksTableContainer input[type="checkbox"]:checked');
+            console.log('Selected checkboxes:', checkboxes);
+            if (checkboxes.length === 0) {
+                alert('No books selected');
+                return;
+            }
+
+            let isAlreadyRequested = false;
+            const titlesToRemove = [];
+            checkboxes.forEach(checkbox => {
+                const title = checkbox.getAttribute('data-book-title');
+                const removalQuery = `UPDATE books SET is_deleted = 1 WHERE title = '${title}'`;
+
+                if (!pendingRemovalRequests.some(req => req.includes(removalQuery))) {
+                    console.log('Adding removal query for title:', title);
+                    titlesToRemove.push(removalQuery); // Add the query, not the title
+                    checkbox.checked = false;
+                } else {
+                    console.log('Title already requested for removal:', title);
+                    isAlreadyRequested = true;
+                }
+            });
+
+
+            if (isAlreadyRequested) {
+                console.log('Some titles are already requested for removal');
+                alert(`${titlesToRemove.join(', ')} is/are already requested to be removed`);
+                return;
+            }
+
+            if (!isAlreadyRequested) {
+                console.log('Sending removal requests for:', titlesToRemove);
+                sendRemoveBookRequests(titlesToRemove);
+            }
+        });
+
+
+
+        function sendAddBookRequest(requestDescription) {
+            const username = localStorage.getItem('username');
+            const sentDate = toLocalDateString(new Date());
+
+            const requestData = {
+                publisherUsername: username,
+                sentDate: sentDate,
+                status: 'sent',
+                reqDescription: requestDescription
+            };
+
+            fetch('/send-add-book-request', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestData)
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        console.log('Add book request sent successfully');
+                    } else {
+                        console.error('Error sending add book request');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        document.getElementById('editBookBtn').addEventListener('click', function () {
+            fetchBooksForEdit();
+        });
+        function fetchBooksForEdit() {
+            const username = localStorage.getItem('username');
+            fetch(`/books-by-publisher-username/${username}`)
+                .then(response => response.json())
+                .then(books => {
+                    showEditForm(books);
+                })
+                .catch(error => console.error('Error fetching books for edit:', error));
+        }
+        function showEditForm(books) {
+            let bookOptions = books.map(book => `<option value="${book.title}">${book.title}</option>`).join('');
+            document.getElementById('output-text').innerHTML = `
+                <h3>Edit Book</h3>
+                <form id="editBookForm" class="form-group">
+                    <div class="mb-3">
+                        <label for="editBookSelect" class="form-label">Select Book:</label>
+                        <select id="editBookSelect" class="form-control">${bookOptions}</select>
+                    </div>
+                    <div class="mb-3">
+                        <label>Current Price:</label>
+                        <span id="currentPrice"></span>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" id="editPriceCheck" class="form-check-input">
+                        <label for="editPrice" class="form-label">New Price:</label>
+                        <input type="number" id="editPrice" class="form-control" step="0.01" disabled>
+                    </div>
+                    <div class="mb-3">
+                        <label>Current Stock:</label>
+                        <span id="currentStock"></span>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" id="editStockCheck" class="form-check-input">
+                        <label for="editStock" class="form-label">New Stock:</label>
+                        <input type="number" id="editStock" class="form-control" min="1" step="1" disabled>
+                    </div>
+                    <button type="submit" class="btn btn-success">Submit Request</button>
+                </form>
+            `;
+
+
+            document.getElementById('editBookSelect').addEventListener('change', function () {
+                const selectedBook = books.find(book => book.title === this.value);
+                document.getElementById('currentPrice').textContent = `$${selectedBook.price}`;
+                document.getElementById('currentStock').textContent = selectedBook.stock;
+            });
+
+            if (books.length > 0) {
+                document.getElementById('editBookSelect').dispatchEvent(new Event('change'));
+            }
+
+            document.getElementById('editPriceCheck').addEventListener('change', function () {
+                document.getElementById('editPrice').disabled = !this.checked;
+            });
+            document.getElementById('editStockCheck').addEventListener('change', function () {
+                document.getElementById('editStock').disabled = !this.checked;
+            });
+            document.getElementById('editBookForm').addEventListener('submit', function (event) {
+                event.preventDefault();
+
+                const editPriceCheck = document.getElementById('editPriceCheck').checked;
+                const editStockCheck = document.getElementById('editStockCheck').checked;
+
+                if (!editPriceCheck && !editStockCheck) {
+                    alert('No checkboxes selected');
+                    return;
+                }
+
+                const title = document.getElementById('editBookSelect').value;
+                const editPrice = editPriceCheck ? document.getElementById('editPrice').value : undefined;
+                const editStock = editStockCheck ? document.getElementById('editStock').value : undefined;
+
+                let requestDescription = `Request to edit book titled '${title}'`;
+                if (editPriceCheck) {
+                    requestDescription += `, set new price to $${editPrice}`;
+                }
+                if (editStockCheck) {
+                    requestDescription += `, set new stock to ${editStock}`;
+                }
+
+                sendEditBookRequest(requestDescription, title, editPrice, editStock);
+            });
+
+        }
+
+        function sendEditBookRequest(requestDescription, bookTitle, newPrice, newStock) {
+            const username = localStorage.getItem('username');
+            const sentDate = toLocalDateString(new Date());
+
+            let queryParts = [];
+            if (newPrice !== undefined) {
+                queryParts.push(`price = ${newPrice}`);
+            }
+            if (newStock !== undefined) {
+                queryParts.push(`stock = ${newStock}`);
+            }
+            const query = `UPDATE books SET ${queryParts.join(', ')} WHERE title = '${bookTitle.replace(/'/g, "\\'")};'`;
+
+            const requestData = {
+                publisherUsername: username,
+                sentDate: sentDate,
+                status: 'sent',
+                reqQuery: query
+            };
+
+            fetch('/send-edit-book-request', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestData)
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        console.log('Edit book request sent successfully');
+                    } else {
+                        console.error('Error sending edit book request');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <header_header></header_header>
+    <script src="js/include.js"></script>
+</head>
+
+<body>
+    <header_body></header_body>
+    <div style="display: flex;">
+        <div id="cartDisplay" style="flex: 1;">
+            <h2>Your Cart</h2>
+            <ul id="cartItems" class="list-group"></ul>
+            <p id="totalPrice"></p>
+        </div>
+        <div style="flex: 1;">
+            <h2>Payment Method</h2>
+            <form id="paymentForm">
+                <label>
+                    <input type="checkbox" id="creditCardCheckbox" onchange="toggleCreditCardForm()">
+                    Pay with Credit Card
+                </label>
+                <div id="creditCardForm" style="display: none;">
+                    <input type="text" id="cardNumber" placeholder="Card Number" pattern="^[0-9]{16}$" required
+                        disabled>
+                    <input type="text" id="cvv" placeholder="CVV" pattern="^[0-9]{3}$" required disabled>
+                    <input type="text" id="expiryDate" placeholder="MM/YY" pattern="^(0[1-9]|1[0-2])\/([0-9]{2})$"
+                        required disabled>
+                </div>
+                <button type="submit">Pay</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="successModal"
+        style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: white; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.5);">
+        <p id="successMessage"></p>
+        <button onclick="closeSuccessModal()">Close</button>
+    </div>
+    <div id="notificationIcon" style="position: fixed; bottom: 20px; right: 20px; cursor: pointer;">
+        <i class="fa fa-bell"></i>
+    </div>
+    <div id="notificationModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>Notifications</h2>
+            <div id="notificationList">
+            </div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            fetchCartItems();
+            document.getElementById('paymentForm').addEventListener('submit', handlePayment);
+            toggleCreditCardForm();
+
+        });
+        function fetchCartItems() {
+            const username = localStorage.getItem('username');
+            fetch(`http://localhost:3000/cart/${username}`)
+                .then(response => response.json())
+                .then(books => {
+                    const cartItems = document.getElementById('cartItems');
+                    let totalCartPrice = 0;
+                    books.forEach(book => {
+                        const price = parseFloat(book.price);
+                        const totalPricePerItem = parseFloat(book.total_price_per_item);
+                        const li = document.createElement('li');
+                        li.className = 'list-group-item';
+                        li.textContent = `${book.title} - ${book.amount} x $${price.toFixed(2)} = $${totalPricePerItem.toFixed(2)}`;
+                        cartItems.appendChild(li);
+                        totalCartPrice += totalPricePerItem;
+                    });
+
+                    document.getElementById('totalPrice').textContent = `Total: $${totalCartPrice.toFixed(2)}`;
+                });
+        }
+
+        function validatePaymentForm() {
+            const cardNumber = document.getElementById('cardNumber').value;
+            const cvv = document.getElementById('cvv').value;
+            const expiryDate = document.getElementById('expiryDate').value;
+
+            const cardNumberPattern = /^[0-9]{16}$/;
+            const cvvPattern = /^[0-9]{3}$/;
+            const expiryDatePattern = /^(0[1-9]|1[0-2])\/(2[4-9]|[3-9][0-9])$/;
+
+            return cardNumberPattern.test(cardNumber) && cvvPattern.test(cvv) && expiryDatePattern.test(expiryDate);
+        }
+
+
+        function handlePayment(event) {
+            event.preventDefault();
+            if (!validatePaymentForm()) {
+                alert('Please fill in the payment details correctly.');
+                return;
+            }
+
+            const username = localStorage.getItem('username');
+            const totalAmount = parseFloat(document.getElementById('totalPrice').textContent.replace('Total: $', ''));
+
+            fetch('http://localhost:3000/make-payment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, totalAmount })
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        showSuccessModal('Payment successful. Your order is being processed.');
+                    } else {
+                        alert('Error processing payment');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error processing payment:', error);
+                    alert('Error processing payment');
+                });
+        }
+
+        function toggleCreditCardForm() {
+            const isChecked = document.getElementById('creditCardCheckbox').checked;
+            document.getElementById('creditCardForm').style.display = isChecked ? 'block' : 'none';
+            const fields = document.querySelectorAll('#creditCardForm input');
+            fields.forEach(field => field.disabled = !isChecked);
+        }
+
+        function showSuccessModal(message) {
+            document.getElementById('successMessage').textContent = message;
+            document.getElementById('successModal').style.display = 'block';
+        }
+
+        function closeSuccessModal() {
+            document.getElementById('successModal').style.display = 'none';
+            window.location.reload();
+        }
+
+        function openNotifications() {
+            console.log('openNotifications function called'); 
+            document.getElementById('notificationModal').style.display = 'block';
+            fetchNotifications();
+        }
+
+        function closeModal() {
+            console.log('closeModal function called'); 
+            document.getElementById('notificationModal').style.display = 'none';
+        }
+
+        function fetchNotifications() {
+            console.log('fetchNotifications function called'); 
+            fetch('http://localhost:3000/notifications')
+                .then(response => {
+                    console.log('Response received:', response); 
+                    return response.json();
+                })
+                .then(notifications => {
+                    console.log('Notifications:', notifications); 
+                    const list = document.getElementById('notificationList');
+                    list.innerHTML = '';
+                    notifications.forEach(notification => {
+                        const item = document.createElement('div');
+                        item.textContent = notification.notif_text;
+                        list.appendChild(item);
+                    });
+                })
+                .catch(error => console.error('Error fetching notifications:', error));
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const notificationIcon = document.getElementById('notificationIcon');
+            if (notificationIcon) {
+                console.log('notificationIcon found:', notificationIcon);
+                notificationIcon.addEventListener('click', openNotifications);
+                console.log('Event listener attached to notification icon');
+            } else {
+                console.error('notificationIcon element not found');
+            }
+        });
+
+
+    </script>
+</body>
+
+</html>

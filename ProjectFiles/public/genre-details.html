@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <header_header></header_header>
+    <script src="js/include.js"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: lightblue; 
+        }
+
+        .card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            background-color: #ffffff;
+        }
+
+        .card:hover {
+            transform: scale(1.05); 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .card-img-top {
+            height: auto; 
+            object-fit: contain; 
+            max-height: 180px; 
+        }
+
+        .card-title a {
+            color: #007bff; 
+            text-decoration: none;
+        }
+
+        .card-title a:hover {
+            text-decoration: underline;
+        }
+
+        .card-body {
+            padding: 10px; 
+        }
+
+        #genreBooksContainer {
+            padding-top: 20px; 
+        }
+        
+    </style>
+</head>
+<body>
+    <header_body></header_body>
+
+    <div id="genreBooksContainer" class="container mt-4">
+        <div class="row1"> 
+        </div>
+    </div>
+    <div id="notificationIcon" style="position: fixed; bottom: 20px; right: 20px; cursor: pointer;">
+        <i class="fa fa-bell"></i>
+    </div>
+    <div id="notificationModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>Notifications</h2>
+            <div id="notificationList">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const genreId = urlParams.get('genreId');
+
+            fetch(`http://localhost:3000/books/genre/${genreId}`)
+                .then(response => response.json())
+                .then(books => {
+                    const row = document.querySelector('#genreBooksContainer .row1'); 
+                    books.forEach(book => {
+                        const imageUrl = book.image_url ? `/images/${book.image_url}` : '/images/default.jpg';
+                        const bookElement = document.createElement('div');
+                        bookElement.className = 'col-md-4 mb-4';
+                        bookElement.innerHTML = `
+                            <div class="card h-100">
+                                <img src="${imageUrl}" class="card-img-top" alt="${book.title}">
+                                <div class="card-body">
+                                    <h5 class="card-title"><a href="/book-details.html?bookId=${book.book_id}">${book.title}</a></h5>
+                                    <p class="card-text">${book.description ? book.description.substring(0, 255) + '...' : ''}</p>
+                                </div>
+                            </div>
+                        `;
+                        row.appendChild(bookElement); 
+                    });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    row.innerHTML = `<p>Error loading books for genre.</p>`;
+                });
+        });
+        function openNotifications() {
+            console.log('openNotifications function called'); 
+            document.getElementById('notificationModal').style.display = 'block';
+            fetchNotifications();
+        }
+
+        function closeModal() {
+            console.log('closeModal function called');  
+            document.getElementById('notificationModal').style.display = 'none';
+        }
+
+        function fetchNotifications() {
+            console.log('fetchNotifications function called');  
+            fetch('http://localhost:3000/notifications')
+                .then(response => {
+                    console.log('Response received:', response);  
+                    return response.json();
+                })
+                .then(notifications => {
+                    console.log('Notifications:', notifications);
+                    const list = document.getElementById('notificationList');
+                    list.innerHTML = '';
+                    notifications.forEach(notification => {
+                        const item = document.createElement('div');
+                        item.textContent = notification.notif_text;
+                        list.appendChild(item);
+                    });
+                })
+                .catch(error => console.error('Error fetching notifications:', error));
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const notificationIcon = document.getElementById('notificationIcon');
+            if (notificationIcon) {
+                console.log('notificationIcon found:', notificationIcon); 
+                notificationIcon.addEventListener('click', openNotifications);
+                console.log('Event listener attached to notification icon'); 
+            } else {
+                console.error('notificationIcon element not found');
+            }
+        });
+
+    </script>
+</body>
+</html>

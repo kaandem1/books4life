@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <header_header></header_header>
+    <script src="js/include.js"></script>
+    <script>
+        function searchBooks() {
+            const searchInput = document.querySelector('.topnav input');
+            const searchTerm = searchInput.value;
+            window.location.href = `/search_results.html?term=${encodeURIComponent(searchTerm)}`;
+        }
+    </script>
+    
+    </head>
+<body>
+    <header_body></header_body>
+
+    
+    <script src="js/include.js"></script>
+</body>
+
+</html>

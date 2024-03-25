@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <style>
+        #title h1 {
+            margin-top: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .review-card {
+            margin-bottom: 15px;
+        }
+
+        .wishlist-book {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="title" class="container">
+        <div id="t"></div>
+    </div>
+
+    <div class="container mt-3">
+        <h3>Personal information</h3>
+        <div id="details"></div>
+    </div>
+
+    <div class="container mt-4">
+        <h3>Reviews by This User</h3>
+        <div id="reviewsContainer"></div>
+    </div>
+
+    <div class="container mt-4 mb-5">
+        <h3>Wishlist</h3>
+        <div id="wishlistContainer"></div>
+    </div>
+
+    <div class="modal" id="reviewRemovalModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Remove Review</h5>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <label><input type="checkbox" id="indecentLanguageCheckbox"> Indecent language</label>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" onclick="removeReview()">Confirm Removal</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const params = new URLSearchParams(window.location.search);
+            const actorId = params.get('actorId');
+
+            if (actorId) {
+                displayTitle(actorId);
+                displayDetails(actorId);
+                displayReviews(actorId);
+                displayWishlist(actorId);
+            } else {
+                console.error('No actorId provided');
+            }
+        });
+
+
+
+        function displayTitle(actorId) {
+            fetch(`http://localhost:3000/clientDetails/${actorId}`)
+                .then(response => response.json())
+                .then(clientDetails => {
+                    const container = document.getElementById('t');
+                    const client = clientDetails[0];
+                    const clientElement = document.createElement('h1');
+                    clientElement.innerHTML = `<h1>Details of: ${client.username}</h1>`;
+                    container.appendChild(clientElement);
+                })
+                .catch(error => {
+                    console.error('Error loading client details:', error);
+                });
+        }
+
+        function displayDetails(actorId) {
+            fetch(`http://localhost:3000/clientData/${actorId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(clientData => {
+                    const container = document.getElementById('details');
+                    container.innerHTML = `
+                <p>Username: ${clientData.username}</p>
+                <p>Password: ${clientData.password}</p>
+                <p>Actor ID: ${clientData.actor_id}</p>
+            `;
+                })
+                .catch(error => {
+                    console.error('Error loading client data:', error);
+                });
+        }
+
+        function displayReviews(actorId) {
+            fetch(`http://localhost:3000/reviewsByActor/${actorId}`)
+                .then(response => response.json())
+                .then(reviews => {
+                    const reviewsContainer = document.getElementById('reviewsContainer');
+                    reviewsContainer.innerHTML = '';
+                    reviews.forEach(review => {
+                        const reviewElement = document.createElement('div');
+                        reviewElement.className = 'review-card card';
+                        reviewElement.innerHTML = `
+                    <div class="card-body">
+                        <h5 class="card-title"><strong>Book:</strong> ${review.book_title}</h5>
+                        <p class="card-text"><strong>Rating:</strong> ${review.rating}</p>
+                        <p class="card-text"><strong>Review:</strong> ${review.description}</p>
+                        <p class="card-text"><small class="text-muted">Date: ${new Date(review.timestamp).toLocaleDateString()}</small></p>
+                    </div>
+                `;
+                        if (review.rating !== 0) {
+                            const removeButton = document.createElement('button');
+                            removeButton.className = 'btn btn-danger';
+                            removeButton.textContent = 'Remove';
+                            removeButton.onclick = () => {
+                                currentReviewId = review.review_id;
+                                $('#reviewRemovalModal').modal('show');
+                            };
+                            reviewElement.appendChild(removeButton);
+                        }
+
+                        reviewsContainer.appendChild(reviewElement);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading reviews:', error);
+                });
+        }
+
+
+
+        function removeReview() {
+            const reason = document.getElementById('indecentLanguageCheckbox').checked ? 'Indecent language' : 'Other';
+            fetch(`http://localhost:3000/remove-review/${currentReviewId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reason })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Review removed successfully');
+                        $('#reviewRemovalModal').modal('hide');
+                        // Optionally refresh the reviews
+                    } else {
+                        alert('Error removing review');
+                    }
+                })
+                .catch(error => console.error('Error removing review:', error));
+        }
+
+        function setCurrentReviewId(reviewId) {
+            currentReviewId = reviewId;
+            $('#reviewRemovalModal').modal('show');
+        }
+
+        function displayWishlist(actorId) {
+            fetch(`http://localhost:3000/wishlistByActor/${actorId}`)
+                .then(response => response.json())
+                .then(wishlistBooks => {
+                    const container = document.getElementById('wishlistContainer');
+                    wishlistBooks.forEach(book => {
+                        const bookElement = document.createElement('div');
+                        bookElement.className = 'wishlist-book';
+                        bookElement.innerHTML = `
+                        <h5>${book.title}</h5>
+
+                        `;
+                        container.appendChild(bookElement);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading wishlist:', error);
+                });
+        }
+
+
+
+
+
+    </script>
+</body>
+
+</html>

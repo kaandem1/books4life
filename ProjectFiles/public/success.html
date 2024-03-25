@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bookstore</title>
+    <header_header></header_header>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
+        integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="/header/header_style.css">
+    <script src="js/include.js"></script>
+    <style>
+        #bookTitle,
+        #bookAuthor,
+        #bookGenre,
+        #bookDescription,
+        #bookPrice,
+        #bookAgeCategory,
+        #bookStock {
+            color: white;
+        }
+
+        .book-detail {
+            padding-bottom: 20px;
+        }
+
+        .suggestion-btn {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 0 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        .suggestion-btn:hover {
+            background-color: #0056b3;
+        }
+
+        .suggestion-buttons {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+    </style>
+        <script>
+            function searchBooks() {
+                const searchInput = document.querySelector('.topnav input');
+                const searchTerm = searchInput.value;
+    
+                window.location.href = `/search_results.html?term=${encodeURIComponent(searchTerm)}`;
+            }
+        </script>
+</head>
+
+<body>
+    <header_body></header_body>
+    
+
+    <div class="container my-4 text-white">
+        <div class="row">
+            <div class="col-md-12">
+                <h1 class="text-center mb-4">Personalized Book Suggestions</h1>
+                <div class="suggestion-buttons text-center mb-3">
+                    <button class="suggestion-btn" onclick="fetchSuggestionsByAgeCategory()">By Age Category</button>
+                    <button class="suggestion-btn" onclick="fetchSuggestionsByWishlist()">By Wishlist</button>
+                    <button class="suggestion-btn" onclick="fetchSuggestionsByPreviousOrders()">By Previous Orders</button>
+                </div>
+                <div id="booksContainer" class="row">
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="notificationIcon" style="position: fixed; bottom: 20px; right: 20px; cursor: pointer;">
+        <i class="fa fa-bell"></i>
+    </div>
+    <div id="notificationModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>Notifications</h2>
+            <div id="notificationList">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function displayBooks(books) {
+            console.log('Received books:', books);
+            const booksContainer = document.getElementById('booksContainer');
+            if (!booksContainer) {
+                console.error('booksContainer not found');
+                return;
+            }
+    
+            booksContainer.innerHTML = '';
+            if (!books.length) {
+                console.log('No books to display');
+                booksContainer.innerHTML = '<p>No personalized suggestions are available at this time.</p>';
+                return;
+            }
+    
+            books.forEach(book => {
+                const bookCard = document.createElement('div');
+                bookCard.className = 'col-md-4 mb-4';
+                bookCard.innerHTML = `
+                    <div class="card h-100 bg-dark text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <a href="/book-details.html?bookId=${book.book_id}" class="text-white">${book.title}</a>
+                            </h5>
+                            <p class="card-text">${book.description}</p>
+                        </div>
+                        <div class="card-footer">
+                            <small>Genre: ${book.genre_name}</small><br>
+                            <strong>Price: $${book.price}</strong>
+                        </div>
+                    </div>
+                `;
+                booksContainer.appendChild(bookCard);
+            });
+        }
+    
+        function fetchSuggestionsByCategory(endpoint) {
+            const username = localStorage.getItem('username');
+            if (!username) {
+                alert('You must be logged in to see personalized suggestions.');
+                return;
+            }
+    
+            fetch(`http://localhost:3000/${endpoint}?username=${username}`)
+                .then(response => response.json())
+                .then(books => {
+                    displayBooks(books);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    const booksContainer = document.getElementById('booksContainer');
+                    booksContainer.innerHTML = '<p>Failed to load personalized suggestions. Please try again later.</p>';
+                });
+        }
+    
+        function fetchSuggestionsByAgeCategory() {
+            fetchSuggestionsByCategory('suggestions-by-age-category');
+        }
+    
+        function fetchSuggestionsByWishlist() {
+            fetchSuggestionsByCategory('suggestions-by-wishlist');
+        }
+    
+        function fetchSuggestionsByPreviousOrders() {
+            fetchSuggestionsByCategory('suggestions-by-previous-orders');
+        }
+        function openNotifications() {
+            console.log('openNotifications function called');  
+            document.getElementById('notificationModal').style.display = 'block';
+            fetchNotifications();
+        }
+
+        function closeModal() {
+            console.log('closeModal function called');  
+            document.getElementById('notificationModal').style.display = 'none';
+        }
+
+        function fetchNotifications() {
+            console.log('fetchNotifications function called');  
+            fetch('http://localhost:3000/notifications')
+                .then(response => {
+                    console.log('Response received:', response);  
+                    return response.json();
+                })
+                .then(notifications => {
+                    console.log('Notifications:', notifications);
+                    const list = document.getElementById('notificationList');
+                    list.innerHTML = '';
+                    notifications.forEach(notification => {
+                        const item = document.createElement('div');
+                        item.textContent = notification.notif_text;
+                        list.appendChild(item);
+                    });
+                })
+                .catch(error => console.error('Error fetching notifications:', error));
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const notificationIcon = document.getElementById('notificationIcon');
+            if (notificationIcon) {
+                console.log('notificationIcon found:', notificationIcon);
+                notificationIcon.addEventListener('click', openNotifications);
+                console.log('Event listener attached to notification icon');
+            } else {
+                console.error('notificationIcon element not found');
+            }
+        });
+
+    </script>
+    
+
+</body>
+
+</html>

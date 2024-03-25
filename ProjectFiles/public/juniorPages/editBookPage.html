@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <title>Edit Book Information</title>
+</head>
+
+<body>
+    <div class="container mt-4">
+        <h1 class="mb-4">Edit Book Information</h1>
+
+        <div class="form-group">
+            <label for="bookSelect">Select Book:</label>
+            <select id="bookSelect" class="form-control" onchange="loadBookDetails()"></select>
+        </div>
+
+        <div id="bookDetailsForm">
+            <div class="currentDetails">
+                <p>Current Title: <span id="currentTitle"></span></p>
+                <p>Current Age Category ID: <span id="currentAgeCat"></span></p>
+                <p>Current Genre ID: <span id="currentGenre"></span></p>
+                <p>Current Author ID: <span id="currentAuthor"></span></p>
+                <p>Current Description: <span id="currentDescription"></span></p>
+                <p>Current Price: <span id="currentPrice"></span></p>
+                <p>Current Stock: <span id="currentStock"></span></p>
+                <p>Current Publisher ID: <span id="currentPublisher"></span></p>
+            </div>
+
+            <div class="form-group form-check">
+                <input type="checkbox" class="form-check-input" id="editTitleCheck">
+                <label for="editTitle" class="form-label">New Title:</label>
+                <input type="text" id="editTitle" class="form-control" disabled>
+            </div>
+
+            <div class="form-group form-check">
+                <input type="checkbox" class="form-check-input" id="editAgeCatCheck">
+                <label for="editAgeCat" class="form-label">New Age Category:</label>
+                <input type="number" id="editAgeCat" class="form-control" disabled>
+            </div>
+
+            <div class="form-group form-check">
+                <input type="checkbox" class="form-check-input" id="editGenreCheck">
+                <label for="editGenre" class="form-label">New Genre:</label>
+                <input type="number" id="editGenre" class="form-control" disabled>
+            </div>
+
+            <div class="form-group form-check">
+                <input type="checkbox" class="form-check-input" id="editAuthorCheck">
+                <label for="editAuthor" class="form-label">New Author:</label>
+                <input type="number" id="editAuthor" class="form-control" disabled>
+            </div>
+
+            <div class="form-group form-check">
+                <input type="checkbox" class="form-check-input" id="editDescCheck">
+                <label for="editDesc" class="form-label">New Description:</label>
+                <textarea id="editDesc" class="form-control" disabled></textarea>
+            </div>
+
+            <div class="form-group form-check">
+                <input type="checkbox" class="form-check-input" id="editPriceCheck">
+                <label for="editPrice" class="form-label">New Price:</label>
+                <input type="number" id="editPrice" class="form-control" step="0.01" disabled>
+            </div>
+
+            <div class="form-group form-check">
+                <input type="checkbox" class="form-check-input" id="editStockCheck">
+                <label for="editStock" class="form-label">New Stock:</label>
+                <input type="number" id="editStock" class="form-control" min="1" disabled>
+            </div>
+
+            <div class="form-group form-check">
+                <input type="checkbox" class="form-check-input" id="editPublisherCheck">
+                <label for="editPublisher" class="form-label">New Publisher ID:</label>
+                <input type="number" id="editPublisher" class="form-control" disabled>
+            </div>
+
+            <button type="button" class="btn btn-primary" onclick="submitEditRequest()">Submit Request</button>
+        </div>
+
+        <div class="section mb-4">
+            <h2>Publisher List</h2>
+            <table id="publishersTable" class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section mb-4">
+            <h2>Author List</h2>
+            <table id="authorsTable" class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section mb-4">
+            <h2>Genre List</h2>
+            <table id="genresTable" class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section mb-4">
+            <h2>Age Category List</h2>
+            <table id="ageCategoriesTable" class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            fetchBooks();
+            setupCheckboxes();
+            fetchPublishers();
+            fetchAuthors();
+            fetchGenres();
+            fetchAgeCategories();
+        });
+
+        function fetchBooks() {
+            fetch(`http://localhost:3000/books`)
+                .then(response => response.json())
+                .then(books => {
+                    let bookOptions = books.map(book => `<option value="${book.book_id}">${book.title}</option>`).join('');
+                    document.getElementById('bookSelect').innerHTML = bookOptions;
+                    loadBookDetails();
+                })
+                .catch(error => console.error('Error fetching books:', error));
+        }
+
+        function loadBookDetails() {
+            const bookId = document.getElementById('bookSelect').value;
+            fetch(`http://localhost:3000/book-full-details/${bookId}`)
+                .then(response => response.json())
+                .then(book => {
+                    document.getElementById('currentTitle').textContent = book.title;
+                    document.getElementById('currentDescription').textContent = book.description;
+                    document.getElementById('currentPrice').textContent = `$${book.price}`;
+                    document.getElementById('currentStock').textContent = book.stock;
+                    document.getElementById('currentAgeCat').textContent = book.age_cat_id;
+                    document.getElementById('currentGenre').textContent = book.genre_id;
+                    document.getElementById('currentAuthor').textContent = book.author_id;
+                    document.getElementById('currentPublisher').textContent = book.publisher_id;
+                })
+                .catch(error => console.error('Error loading book full details:', error));
+        }
+
+
+        function setupCheckboxes() {
+            document.querySelectorAll('#bookDetailsForm .form-check-input').forEach(checkbox => {
+                checkbox.addEventListener('change', function () {
+                    const inputId = this.id.replace('Check', '');
+                    document.getElementById(inputId).disabled = !this.checked;
+                });
+            });
+        }
+        function fetchPublishers() {
+            fetch('/publishers-edit')
+                .then(response => response.json())
+                .then(data => populatePublishersTable(data))
+                .catch(error => console.error('Error:', error));
+        }
+
+        function populatePublishersTable(data) {
+            const tableBody = document.getElementById('publishersTable').getElementsByTagName('tbody')[0];
+            tableBody.innerHTML = '';
+
+            data.forEach(publisher => {
+                const row = tableBody.insertRow();
+                row.insertCell().textContent = publisher.id;
+                row.insertCell().textContent = publisher.name;
+            });
+        }
+
+        function fetchAuthors() {
+            fetch('/authors-edit')
+                .then(response => response.json())
+                .then(data => populateAuthorsTable(data))
+                .catch(error => console.error('Error:', error));
+        }
+
+        function fetchGenres() {
+            fetch('/genres-edit')
+                .then(response => response.json())
+                .then(data => populateGenresTable(data))
+                .catch(error => console.error('Error:', error));
+        }
+
+        function fetchAgeCategories() {
+            fetch('/age-categories-edit')
+                .then(response => response.json())
+                .then(data => populateAgeCategoriesTable(data))
+                .catch(error => console.error('Error:', error));
+        }
+
+        function populateAuthorsTable(data) {
+            const tableBody = document.getElementById('authorsTable').getElementsByTagName('tbody')[0];
+            tableBody.innerHTML = '';
+            data.forEach(author => {
+                const row = tableBody.insertRow();
+                row.insertCell().textContent = author.id;
+                row.insertCell().textContent = author.name;
+            });
+        }
+
+        function populateGenresTable(data) {
+            const tableBody = document.getElementById('genresTable').getElementsByTagName('tbody')[0];
+            tableBody.innerHTML = '';
+            data.forEach(genre => {
+                const row = tableBody.insertRow();
+                row.insertCell().textContent = genre.id;
+                row.insertCell().textContent = genre.name;
+            });
+        }
+
+        function populateAgeCategoriesTable(data) {
+            const tableBody = document.getElementById('ageCategoriesTable').getElementsByTagName('tbody')[0];
+            tableBody.innerHTML = '';
+            data.forEach(ageCategory => {
+                const row = tableBody.insertRow();
+                row.insertCell().textContent = ageCategory.id;
+                row.insertCell().textContent = ageCategory.name;
+            });
+        }
+
+        function submitEditRequest() {
+            const bookId = document.getElementById('bookSelect').value;
+            let updateData = {};
+
+            document.querySelectorAll('#bookDetailsForm .form-check-input:checked').forEach(checkbox => {
+                const inputId = checkbox.id.replace('Check', '');
+                const value = document.getElementById(inputId).value;
+
+                if (value) {
+                    let updateKey = inputId;
+
+                    if (inputId === "editTitle") updateKey = "title";
+                    if (inputId === "editAgeCat") updateKey = "age_cat_id";
+                    if (inputId === "editGenre") updateKey = "genre_id";
+                    if (inputId === "editAuthor") updateKey = "author_id";
+                    if (inputId === "editDesc") updateKey = "description";
+                    if (inputId === "editPrice") updateKey = "price";
+                    if (inputId === "editStock") updateKey = "stock";
+                    if (inputId === "editPublisher") updateKey = "publisher_id";
+
+                    updateData[updateKey] = value;
+                } else {
+                    console.error('Error: Empty field for', inputId);
+                }
+            });
+
+            fetch('/update-book', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ bookId: bookId, updates: updateData })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.message === 'Book updated successfully') {
+                        loadBookDetails(bookId);
+                    } else {
+                        
+                    }
+                })
+                .catch(error => console.error('Error updating book:', error));
+        }
+
+    </script>
+</body>
+
+</html>

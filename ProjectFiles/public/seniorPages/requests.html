@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Requests Management</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table,
+        th,
+        td {
+            border: 1px solid black;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container mt-4">
+        <h1 class="text-center mb-4">Requests Management</h1>
+
+        <div class="input-group mb-3">
+            <input type="text" id="requestIds" class="form-control" placeholder="Enter Request IDs (comma-separated)">
+            <div class="input-group-append">
+                <button onclick="processRequests('approve')" class="btn btn-success">Approve Selected</button>
+                <button onclick="processRequests('deny')" class="btn btn-danger">Deny Selected</button>
+            </div>
+        </div>
+
+        <div class="section mb-4">
+            <h2>Publisher List</h2>
+            <table id="publishersTable" class="table table-bordered">
+                <thead>
+                    <!-- ... your header columns here ... -->
+                </thead>
+                <tbody>
+                    <!-- Table body content will be inserted here -->
+                </tbody>
+            </table>
+        </div>
+
+        <div class="input-group mb-3">
+            <input type="number" id="publisherFilter" class="form-control" placeholder="Filter by Publisher ID" min="1">
+            <div class="input-group-append">
+                <button onclick="applyFilter()" class="btn btn-primary">Filter</button>
+            </div>
+        </div>
+        <div class="section">
+            <h2>Add Requests</h2>
+            <table id="addRequestsTable">
+                <thead>
+                    <tr>
+                        <th>Request ID</th>
+                        <th>Publisher ID</th>
+                        <th>Sent Date</th>
+                        <th>Processed Date</th>
+                        <th>Senior Admin ID</th>
+                        <th>Status</th>
+                        <th>Request Query</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>Edit Requests</h2>
+            <table id="editRequestsTable">
+                <thead>
+                    <tr>
+                        <th>Request ID</th>
+                        <th>Publisher ID</th>
+                        <th>Sent Date</th>
+                        <th>Processed Date</th>
+                        <th>Senior Admin ID</th>
+                        <th>Status</th>
+                        <th>Request Query</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>Remove Requests</h2>
+            <table id="removeRequestsTable">
+                <thead>
+                    <tr>
+                        <th>Request ID</th>
+                        <th>Publisher ID</th>
+                        <th>Sent Date</th>
+                        <th>Processed Date</th>
+                        <th>Senior Admin ID</th>
+                        <th>Status</th>
+                        <th>Request Query</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                fetchRequests();
+                fetchPublishers();
+            });
+            function applyFilter() {
+                const publisherId = document.getElementById('publisherFilter').value;
+                fetchRequests(publisherId);
+            }
+
+            function toLocalDateString(date) {
+            const offset = date.getTimezoneOffset();
+            const localDate = new Date(date.getTime() - (offset * 60 * 1000));
+            return localDate.toISOString().split('T')[0];
+        }
+
+            function fetchRequests(publisherId = '') {
+                let url;
+                if (publisherId) {
+                    url = `/requests/publisher/${publisherId}`;
+                } else {
+                    url = `/requests`;
+                }
+                fetch(url)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (Array.isArray(data)) {
+                            classifyAndPopulateTables(data);
+                        } else {
+                            console.error("Expected an array but got:", data);
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
+            }
+
+
+            function classifyAndPopulateTables(data) {
+                const addRequests = data.filter(request => request.req_query.startsWith("Request to add a new book"));
+                const removeRequests = data.filter(request => request.req_query.includes("is_deleted"));
+                const editRequests = data.filter(request => !addRequests.includes(request) && !removeRequests.includes(request));
+
+                populateTable(addRequests, 'addRequestsTable');
+                populateTable(editRequests, 'editRequestsTable');
+                populateTable(removeRequests, 'removeRequestsTable');
+            }
+            function formatDate(isoDateString) {
+                const date = new Date(isoDateString);
+                const offset = date.getTimezoneOffset();
+                const localDate = new Date(date.getTime() - (offset * 60 * 1000));
+                return localDate.toISOString().split('T')[0];
+            }
+
+            function populateTable(data, tableId) {
+                const tableBody = document.getElementById(tableId).getElementsByTagName('tbody')[0];
+                tableBody.innerHTML = '';
+
+                data.forEach(request => {
+                    const row = tableBody.insertRow();
+
+                    row.insertCell().textContent = request.request_id;
+                    row.insertCell().textContent = request.publisher_id;
+                    row.insertCell().textContent = formatDate(request.sent_date);
+                    row.insertCell().textContent = request.processed_date ? formatDate(request.processed_date) : '';
+                    row.insertCell().textContent = request.senior_admin_id;
+                    row.insertCell().textContent = request.status;
+                    row.insertCell().textContent = request.req_query;
+                });
+            }
+
+            document.addEventListener('DOMContentLoaded', function () {
+                fetchRequests();
+                fetchPublishers();
+            });
+
+            function fetchPublishers() {
+                fetch('/publishers')
+                    .then(response => response.json())
+                    .then(data => populatePublishersTable(data))
+                    .catch(error => console.error('Error:', error));
+            }
+
+            function populatePublishersTable(data) {
+                const tableBody = document.getElementById('publishersTable').getElementsByTagName('tbody')[0];
+                tableBody.innerHTML = '';
+
+                data.forEach(publisher => {
+                    const row = tableBody.insertRow();
+                    row.insertCell().textContent = publisher.id;
+                    row.insertCell().textContent = publisher.username;
+                });
+            }
+
+            function processRequests(action) {
+                const requestIds = document.getElementById('requestIds').value.split(',').map(id => id.trim());
+                requestIds.forEach(requestId => {
+                    if (!isNaN(requestId)) {
+                        updateRequestStatus(requestId, action, () => {
+                            fetch(`/requests/request/${requestId}`)
+                                .then(response => response.json())
+                                .then(requestData => {
+                                    if (requestData && requestData.req_query) {
+                                        if (!requestData.req_query.startsWith("Request to add a new book")) {
+                                            if (action === 'approve') {
+                                                executeRequestQuery(requestId);
+                                            }
+                                        }
+                                    }
+                                })
+                                .catch(error => console.error('Error fetching request:', error));
+                        });
+                    }
+                });
+            }
+
+
+            function updateRequestStatus(requestId, action, callback) {
+                const username = localStorage.getItem('username');
+                const status = action === 'approve' ? 'approved' : 'denied';
+                const processedDate = toLocalDateString(new Date());
+
+                fetch(`/update-request-status/${requestId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status, username, processedDate })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log(data);
+                        callback();
+                    })
+                    .catch(error => console.error('Error:', error));
+            }
+
+            function fetchRequestData(requestId, tableId) {
+                fetch(`/requests/${requestId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.length) {
+                            populateTable([data[0]], tableId);
+                        }
+                    })
+                    .catch(error => console.error('Error fetching request data:', error));
+            }
+            function executeRequestQuery(requestId) {
+                fetch(`/execute-request-query/${requestId}`, { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => console.log(data))
+                    .catch(error => console.error('Error:', error));
+            }
+        </script>
+        <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+</body>
+
+</html>

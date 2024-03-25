@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+</head>
+
+<body>
+    <div class="container2">
+        <div class="row">
+            <div class="col-md-auto">
+                <div class="logo-container">
+                    <a href="success.html"><img src="images/logo.png" class="logo"></a>
+                </div>
+            </div>
+            <div class="col-md-auto">
+                <h2>
+                    <p class="welcome">
+                        Welcome, <span id="clientName"></span>!
+                    </p>
+                </h2>
+            </div>
+            <div class="col-md-auto">
+                <div class="topnav">
+                    <span style="vertical-align: -27px;">
+                        <button onclick="searchBooks()" style="height: 40px; margin-right: 6px;">Search</button>
+                        <input type="text" placeholder="Search...">
+                    </span>    
+                </div>
+            </div>
+            <div class="col-md-auto">
+                <a id="prevOrder-btn" href="/prev-order.html">
+                    <i class="fa-solid fa-list"></i>
+                    <span>
+                        Previous Orders
+                    </span>
+                </a>
+            </div>
+            <div class=" col-md-auto">
+                <div id="cart">
+                    <a id="cart-btn" href="/cart.html">
+                        <i class="fa-solid fa-cart-shopping"></i>
+                        <span>
+                            Cart
+                        </span>
+                    </a>
+                </div>
+            </div>
+            <div class="col-md-auto">
+                <a id="star-btn" href="/wishlist.html">
+                    <i class="fa-solid fa-star"></i>
+                    <span>
+                        Wishlist
+                    </span>
+                </a>
+            </div>
+            <div class="col-md-auto">
+                <a id="logout-btn" href="/">
+                    <i class="fa-solid fa-door-open"></i>
+                    <span>
+                        Log out
+                    </span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container2">
+        <div class="row2">
+            <div class="col-md-auto">
+                <a id="bestSeller-btn" href="/authors.html">
+                    <i class="fa-solid fa-user"></i>
+                    <span>
+                        Authors
+                    </span>
+                </a>
+            </div>
+            <div class="col-md-auto">
+                <a id="topReviewed-btn" href="/top-reviewed.html">
+                    <i class="fa-solid fa-thumbs-up"></i>
+                    <span>
+                        Top Reviewed
+                    </span>
+                </a>
+            </div>
+            <div class="col-md-auto">
+                <a id="genres-btn" href="/genres.html">
+                    <i class="fa-solid fa-tag"></i>
+                    <span>
+                        Genres
+                    </span>
+                </a>
+            </div>
+            <div class=" col-md-auto">
+                <div id="additions">
+                    <a id="additions-btn" href="/latestAdditions.html">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>
+                            Latest Additions
+                        </span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        function searchBooks() {
+            const searchInput = document.querySelector('.topnav input');
+            const searchTerm = searchInput.value;
+
+            // Redirect to search_results.html with the search term as a query parameter
+            window.location.href = `/search_results.html?term=${encodeURIComponent(searchTerm)}`;
+        }
+
+        function takeToHome() {
+            window.location.href = 'success.html';
+        }
+        console.log('Script is running'); // Confirm script execution
+
+
+    </script>
+
+
+
+</body>
